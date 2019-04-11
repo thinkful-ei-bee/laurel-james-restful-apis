@@ -196,17 +196,51 @@ describe('Bookmarks Endpoints', () => {
     })
   })
 
-  // describe.only(`PATCH /bookmarks/:bookmarks_id`, () => {
-  //   context(`Given no bookmarks`, () => {
-  //     it(`responds with 404`, () => {
-  //       const bookmarkId = 1234
-  //       return supertest(app)
-  //       .patch(`/api/bookmarks/${bookmarkId}`)
-  //       .expect(404, {error: {message: `Bookmark doesn't exist`}})
-  //     })
-  //   })
-  //   context('Given there are')
-  // })
+  describe(`PATCH /api/bookmarks/:bookmarks_id`, () => {
+    context(`Given no bookmarks`, () => {
+      it(`responds with 404`, () => {
+        const bookmarkId = 1234
+        return supertest(app)
+        .patch(`/api/bookmarks/${bookmarkId}`)
+        .set('Authorization', `Bearer ${process.env.API_TOKEN}`)
+        .expect(404, {error: {message: `Bookmark Not Found`}})
+      })
+    })
+    context('Given there are bookmarks in the database', () => {
+      const testBookmarks = fixtures.makeBookmarksArray()
+
+      beforeEach('insert bookmarks', () => {
+        return db
+          .into('bookmarks')
+          .insert(testBookmarks)
+      })
+      it('responds with 204 and updates the bookmark', () => {
+        const idToUpdate = 2
+        const updateBookmark = {
+          title: 'updated bookmark title',
+          url: 'https://www.thinkful.com',
+          description: 'Lorem Ipsum',
+          rating: 5 //number can not be in strings
+        }
+        const expectedBookmark = {
+          ...testBookmarks[idToUpdate - 1],
+          ...updateBookmark
+        }
+        return supertest(app)
+        .patch(`/api/bookmarks/${idToUpdate}`)
+        //needs to be in any request
+        .set('Authorization', `Bearer ${process.env.API_TOKEN}`)
+        .send(updateBookmark)
+        .expect(204)
+        .then(res =>
+          supertest(app)
+          .get(`/api/bookmarks/${idToUpdate}`)
+          .set('Authorization', `Bearer ${process.env.API_TOKEN}`)
+          .expect(expectedBookmark) 
+          )
+      })
+    })
+  })
 
   describe('POST /api/bookmarks', () => {
     it(`responds with 400 missing 'title' if not supplied`, () => {
@@ -230,8 +264,8 @@ describe('Bookmarks Endpoints', () => {
       }
       return supertest(app)
         .post(`/api/bookmarks`)
-        .send(newBookmarkMissingUrl)
         .set('Authorization', `Bearer ${process.env.API_TOKEN}`)
+        .send(newBookmarkMissingUrl)
         .expect(400, `'url' is required`)
     })
 
