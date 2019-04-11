@@ -82,21 +82,36 @@ bookmarksRouter
     res.json(serializeBookmark(res.bookmark))
   })
   .delete((req, res, next) => {
-    // TODO: update to use db
     const { bookmark_id } = req.params
     BookmarksService.deleteBookmark(
       req.app.get('db'),
       bookmark_id
     )
-      .then(numRowsAffected => {
+      .then(() => {
         logger.info(`Card with id ${bookmark_id} deleted.`)
         res.status(204).end()
       })
       .catch(next)
   })
-  .patch(jsonParser, (req, res, next) => {
+  .patch(bodyParser, (req, res, next) => {
     const { title, url, description, rating} = req.body
     const updateBookmark = { title, url, description, rating}
+    if (!title || !url || !description || !rating) {
+      return res.status(400).json({
+       error: {
+         message: `Request body must content either 'title', 'url', 'description', or 'rating'`
+       }
+     })
+    }
+    BookmarksService.updateBookmark(
+      req.app.get('db'),
+      req.params.bookmark_id,
+      updateBookmark
+    )
+    .then(() => {
+      res.status(204).end()
+    })
+    .catch(next)
   })
 
 module.exports = bookmarksRouter

@@ -196,6 +196,14 @@ describe('Bookmarks Endpoints', () => {
     })
   })
 
+  describe.only(`PATCH /bookmarks/:bookmarks_id`, () => {
+    context(`Given no bookmarks`, () => {
+      it(`responds with 404`, () => {
+        
+      })
+    })
+  })
+
   describe('POST /bookmarks', () => {
     it(`responds with 400 missing 'title' if not supplied`, () => {
       const newBookmarkMissingTitle = {
